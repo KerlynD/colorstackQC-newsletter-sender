@@ -20,6 +20,19 @@ cloudinary.config(secure=True)
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'your-secret-key-here')
 
+# Startup logging for debugging deployment
+print("=" * 50)
+print("ColorStack Newsletter Sender - Starting Up")
+print("=" * 50)
+print(f"SECRET_KEY set: {'Yes' if os.getenv('SECRET_KEY') else 'No'}")
+print(f"POSTGRES_URL set: {'Yes' if os.getenv('POSTGRES_URL') else 'No'}")
+print(f"EMAIL set: {'Yes' if os.getenv('EMAIL') else 'No'}")
+print(f"EMAIL_PASSWORD set: {'Yes' if os.getenv('EMAIL_PASSWORD') else 'No'}")
+print(f"CLOUDINARY_URL set: {'Yes' if os.getenv('CLOUDINARY_URL') else 'No'}")
+print(f"FLASK_ENV: {os.getenv('FLASK_ENV', 'not set')}")
+print(f"PORT: {os.getenv('PORT', '5000')}")
+print("=" * 50)
+
 # Configuration
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
@@ -28,6 +41,10 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # Create upload directory if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs('static', exist_ok=True)
+
+# Copy the ColorStack logo to static folder for email use (for production deployment)
+if os.path.exists('assets/colorstack-logo.png') and not os.path.exists('static/colorstack-logo.png'):
+    shutil.copy('assets/colorstack-logo.png', 'static/colorstack-logo.png')
 
 # Global variable to store scheduled newsletters
 scheduled_newsletters = []
@@ -175,6 +192,11 @@ def send_newsletter_to_subscribers(send_time):
         
     except Exception as e:
         print(f"Error in scheduled newsletter sending: {e}")
+
+@app.route('/health')
+def health():
+    """Health check endpoint for Railway"""
+    return {'status': 'ok', 'service': 'colorstack-newsletter-sender'}, 200
 
 @app.route('/')
 def index():
