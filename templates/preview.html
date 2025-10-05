@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Preview Newsletter - ColorStack Newsletter Sender{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-eye me-2"></i>Newsletter Preview</h2>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back to Upload
+            </a>
+        </div>
+
+        <div class="row">
+            <!-- Preview Column -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">How it will look in email</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="preview-container">
+                            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;">
+                                <div style="width: 100%; max-width: 600px; margin: 0 auto; background: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+                                    <div style="text-align: center; padding: 10px 0; color: #000000; border-radius: 8px 8px 0 0;">
+                                        <img src="{{ logo_url }}" alt="ColorStack Logo" width="60px">
+                                        <h1>ColorStack Newsletter</h1>
+                                    </div>
+                                    <div style="color: #000000; text-align: center; margin: 20px 0;"></div>  
+                                    <img src="{{ image_url }}" style="max-width: 100%; height: auto; display: block; margin: 0 auto;">      
+                                    <div style="text-align: center; font-size: 12px; color: #666666; margin-top: 20px;">
+                                        <p>You're receiving this email as a member of the ColorStack QC Club.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Column -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Test Email Form -->
+                        <form action="{{ url_for('test_email') }}" method="post" class="mb-3">
+                            <div class="mb-3">
+                                <label for="test_email" class="form-label">Test Email</label>
+                                <input type="email" class="form-control" id="test_email" name="test_email" 
+                                       placeholder="your.email@example.com" required>
+                                <div class="form-text">Send a test email to yourself first</div>
+                            </div>
+                            <button type="submit" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-envelope-check me-2"></i>Send Test Email
+                            </button>
+                        </form>
+
+                        <hr>
+
+                        <!-- Schedule Form -->
+                        <form action="{{ url_for('schedule_newsletter') }}" method="post" class="mb-3">
+                            <h6>Schedule Newsletter</h6>
+                            <div class="mb-3">
+                                <label for="send_date" class="form-label">Send Date</label>
+                                <input type="date" class="form-control" id="send_date" name="send_date" 
+                                       required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="send_time" class="form-label">Send Time</label>
+                                <input type="time" class="form-control" id="send_time" name="send_time" required>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-calendar-plus me-2"></i>Schedule Send
+                            </button>
+                        </form>
+
+                        <hr>
+
+                        <!-- Send Now Form -->
+                        <form action="{{ url_for('send_now') }}" method="post">
+                            <div class="alert alert-warning" role="alert">
+                                <small>
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    This will send to all {{ subscriber_count }} subscribers immediately!
+                                </small>
+                            </div>
+                            <button type="submit" class="btn btn-danger w-100" 
+                                    onclick="return confirm('Are you sure you want to send this newsletter to all {{ subscriber_count }} subscribers right now?')">
+                                <i class="bi bi-send-fill me-2"></i>Send Now
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6><i class="bi bi-info-circle me-2"></i>Newsletter Info</h6>
+                        <ul class="list-unstyled mb-0">
+                            <li><strong>Subscribers:</strong> {{ subscriber_count }}</li>
+                            <li><strong>Image:</strong> Latest uploaded</li>
+                            <li><strong>Subject:</strong> ColorStack Weekly Newsletter</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Set minimum date and time to 5 minutes from now
+    document.addEventListener('DOMContentLoaded', function() {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + 5);
+        
+        const dateInput = document.getElementById('send_date');
+        const timeInput = document.getElementById('send_time');
+        
+        const today = now.toISOString().split('T')[0];
+        const currentTime = now.toTimeString().slice(0, 5);
+        
+        dateInput.min = today;
+        
+        // If today is selected, set minimum time
+        dateInput.addEventListener('change', function() {
+            if (this.value === today) {
+                timeInput.min = currentTime;
+            } else {
+                timeInput.min = '';
+            }
+        });
+    });
+</script>
+{% endblock %}

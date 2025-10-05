@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-cloud-upload me-2"></i>Upload Newsletter Image
+                </h4>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+                    <div class="upload-area mb-4">
+                        <i class="bi bi-cloud-upload display-4 text-primary mb-3"></i>
+                        <h5>Choose an image for your newsletter</h5>
+                        <p class="text-muted">Supported formats: PNG, JPG, JPEG, GIF</p>
+                        <input type="file" class="form-control" name="file" accept=".png,.jpg,.jpeg,.gif" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-upload me-2"></i>Upload & Preview
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Statistics Card -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Newsletter Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="bi bi-people-fill text-primary me-2 fs-4"></i>
+                            <div>
+                                <h3 class="mb-0">{{ subscriber_count }}</h3>
+                                <small class="text-muted">Subscribers</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="bi bi-calendar-event text-success me-2 fs-4"></i>
+                            <div>
+                                <h3 class="mb-0">{{ scheduled_newsletters|length }}</h3>
+                                <small class="text-muted">Scheduled</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scheduled Newsletters -->
+        {% if scheduled_newsletters %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-check me-2"></i>Scheduled Newsletters
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for newsletter in scheduled_newsletters %}
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <strong>Newsletter</strong><br>
+                        <small class="text-muted">
+                            Scheduled for: {{ newsletter.send_time.strftime('%Y-%m-%d at %H:%M') }}
+                        </small>
+                    </div>
+                    <span class="badge bg-warning">Pending</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
