@@ -244,18 +244,32 @@ def upload_file():
 
 @app.route('/preview')
 def preview():
-    image_url = request.args.get('image_url')
-    if not image_url:
-        # Get the latest image URL if none provided
-        image_url = get_latest_image_url()
-    
-    subscriber_count = get_subscriber_count()
-    logo_url = "https://raw.githubusercontent.com/KerlynD/colorstack-newsletter/refs/heads/main/assets/colorstack-logo.png"
-    
-    return render_template('preview.html', 
-                         image_url=image_url,
-                         logo_url=logo_url,
-                         subscriber_count=subscriber_count)
+    try:
+        print("Preview route started")
+        image_url = request.args.get('image_url')
+        if not image_url:
+            print("No image_url in query params, fetching from database")
+            # Get the latest image URL if none provided
+            image_url = get_latest_image_url()
+        else:
+            print(f"Using image_url from query params: {image_url[:50]}...")
+        
+        print("Fetching subscriber count...")
+        subscriber_count = get_subscriber_count()
+        print(f"Subscriber count retrieved: {subscriber_count}")
+        
+        logo_url = "https://raw.githubusercontent.com/KerlynD/colorstack-newsletter/refs/heads/main/assets/colorstack-logo.png"
+        
+        print("Rendering preview.html template")
+        return render_template('preview.html', 
+                             image_url=image_url,
+                             logo_url=logo_url,
+                             subscriber_count=subscriber_count)
+    except Exception as e:
+        print(f"ERROR in preview route: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"Error loading preview: {str(e)}", 500
 
 @app.route('/schedule', methods=['POST'])
 def schedule_newsletter():
