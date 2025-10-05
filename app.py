@@ -160,12 +160,16 @@ def get_newsletter_html(image_filename=None):
 </html>'''
     return html_template
 
-def send_newsletter_to_subscribers(send_time):
-    """Function to send newsletter to all subscribers"""
+def send_newsletter_to_subscribers_background(send_time):
+    """Background function to wait and send newsletter to all subscribers"""
     try:
-        # Wait until the scheduled time
-        while datetime.now() < send_time:
-            time.sleep(60)  # Check every minute
+        # Wait until the scheduled time (only if in future)
+        if send_time > datetime.now():
+            wait_seconds = (send_time - datetime.now()).total_seconds()
+            print(f"Waiting {wait_seconds} seconds until {send_time}")
+            time.sleep(wait_seconds)
+        
+        print(f"Starting newsletter send at {datetime.now()}")
         
         # Get all subscribers
         conn = psycopg2.connect(os.getenv("POSTGRES_URL"))
@@ -175,16 +179,23 @@ def send_newsletter_to_subscribers(send_time):
         cursor.close()
         conn.close()
         
+        print(f"Sending newsletter to {len(users)} subscribers")
+        
         # Send email to each user
+        success_count = 0
+        fail_count = 0
         for user in users:
             try:
                 # Send using latest image
                 send_emails(os.getenv("EMAIL"), os.getenv("EMAIL_PASSWORD"), user)
                 print(f"Newsletter sent to {user[0]}")
+                success_count += 1
             except Exception as e:
                 print(f"Error sending to {user[0]}: {e}")
+                fail_count += 1
         
         print(f"Newsletter sending completed at {datetime.now()}")
+        print(f"Success: {success_count}, Failed: {fail_count}")
         
         # Remove from scheduled list
         global scheduled_newsletters
@@ -192,6 +203,8 @@ def send_newsletter_to_subscribers(send_time):
         
     except Exception as e:
         print(f"Error in scheduled newsletter sending: {e}")
+        import traceback
+        traceback.print_exc()
 
 @app.route('/health')
 def health():
@@ -296,12 +309,13 @@ def schedule_newsletter():
         }
         scheduled_newsletters.append(newsletter_info)
         
-        # Start background thread to send the newsletter
-        thread = threading.Thread(target=send_newsletter_to_subscribers, 
+        # Start background thread to send the newsletter (non-blocking)
+        thread = threading.Thread(target=send_newsletter_to_subscribers_background, 
                                 args=(send_datetime,))
         thread.daemon = True
         thread.start()
         
+        print(f"Newsletter scheduled for {send_datetime} - background thread started")
         flash(f'Newsletter scheduled for {send_datetime.strftime("%Y-%m-%d at %H:%M")}', 'success')
         return redirect(url_for('index'))
         
@@ -312,36 +326,47 @@ def schedule_newsletter():
 @app.route('/send_now', methods=['POST'])
 def send_now():
     try:
-        # Send immediately in background
-        thread = threading.Thread(target=send_newsletter_to_subscribers, 
+        # Send immediately in background (non-blocking)
+        thread = threading.Thread(target=send_newsletter_to_subscribers_background, 
                                 args=(datetime.now(),))
         thread.daemon = True
         thread.start()
         
-        flash('Newsletter is being sent now!', 'success')
+        print("Newsletter send initiated - background thread started")
+        flash('Newsletter is being sent now! Check logs for progress.', 'success')
         return redirect(url_for('index'))
         
     except Exception as e:
-        flash(f'Error sending newsletter: {str(e)}', 'error')
+        print(f"Error starting newsletter send: {e}")
+        flash(f'Error starting newsletter send: {str(e)}', 'error')
         return redirect(url_for('preview'))
 
 @app.route('/test_email', methods=['POST'])
 def test_email():
-    test_email = request.form.get('test_email')
+    test_email_addr = request.form.get('test_email')
     
-    if not test_email:
+    if not test_email_addr:
         flash('Please provide test email', 'error')
         return redirect(url_for('preview'))
     
-    try:
-        # Send test email using latest image
-        send_emails(os.getenv("EMAIL"), os.getenv("EMAIL_PASSWORD"), (test_email,))
-        flash(f'Test email sent to {test_email}', 'success')
-        return redirect(url_for('preview'))
-        
-    except Exception as e:
-        flash(f'Error sending test email: {str(e)}', 'error')
-        return redirect(url_for('preview'))
+    # Send test email in background thread (non-blocking)
+    def send_test_email_background():
+        try:
+            print(f"Sending test email to {test_email_addr}...")
+            send_emails(os.getenv("EMAIL"), os.getenv("EMAIL_PASSWORD"), (test_email_addr,))
+            print(f"Test email successfully sent to {test_email_addr}")
+        except Exception as e:
+            print(f"Error sending test email to {test_email_addr}: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    # Start background thread
+    thread = threading.Thread(target=send_test_email_background, daemon=True)
+    thread.start()
+    
+    print(f"Test email initiated for {test_email_addr} - background thread started")
+    flash(f'Test email is being sent to {test_email_addr}. Check your inbox in a few moments.', 'success')
+    return redirect(url_for('preview'))
 
 if __name__ == '__main__':
     # Copy the ColorStack logo to static folder for email use
