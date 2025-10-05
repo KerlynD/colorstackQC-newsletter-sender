@@ -200,10 +200,17 @@ def health():
 
 @app.route('/')
 def index():
-    subscriber_count = get_subscriber_count()
-    return render_template('index.html', 
-                         subscriber_count=subscriber_count,
-                         scheduled_newsletters=scheduled_newsletters)
+    try:
+        subscriber_count = get_subscriber_count()
+        print(f"Successfully got subscriber count: {subscriber_count}")
+        return render_template('index.html', 
+                             subscriber_count=subscriber_count,
+                             scheduled_newsletters=scheduled_newsletters)
+    except Exception as e:
+        print(f"ERROR in index route: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"Error loading page: {str(e)}", 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
